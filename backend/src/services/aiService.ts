@@ -1,8 +1,10 @@
 import { crmPrompt } from "../prompts/crmPrompt";
 
 export async function mapCRM(records: any[]) {
+  const MODEL = "models/gemini-2.5-flash";
+
   const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+    `https://generativelanguage.googleapis.com/v1beta/${MODEL}:generateContent`,
     {
       method: "POST",
       headers: {
@@ -17,17 +19,18 @@ export async function mapCRM(records: any[]) {
                 text: `${crmPrompt}
 
 Records:
-${JSON.stringify(records)}`
-              }
-            ]
-          }
-        ]
+${JSON.stringify(records)}`,
+              },
+            ],
+          },
+        ],
       }),
     }
   );
 
   if (!response.ok) {
     const error = await response.text();
+    console.error("Gemini API Error:", error);
     throw new Error(error);
   }
 
@@ -41,5 +44,10 @@ ${JSON.stringify(records)}`
     .replace(/```/g, "")
     .trim();
 
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.error("Gemini returned invalid JSON:", cleaned);
+    throw new Error("Gemini returned invalid JSON.");
+  }
 }
